@@ -249,6 +249,28 @@
   .upg-btn:active{ transform:translateY(2px); box-shadow:0 1px 0 var(--gold-dark); }
   .upg-btn.cant{ background:rgba(255,255,255,0.15); color:rgba(255,255,255,0.5); box-shadow:none; }
   .upg-btn.maxed{ background:var(--mint); color:#0a3323; box-shadow:none; }
+  #continue-btn{ position:relative; padding-right:56px; padding-left:34px; animation:reviveGlow 1.4s ease-in-out infinite; }
+  @keyframes reviveGlow{ 0%,100%{ filter:brightness(1); } 50%{ filter:brightness(1.22); } }
+  #continue-count{
+    position:absolute; right:11px; top:50%; transform:translateY(-50%);
+    width:34px; height:34px; border-radius:50%; border:3px solid rgba(255,255,255,0.9);
+    display:flex; align-items:center; justify-content:center; font-size:15px; font-weight:600;
+  }
+  #free-coins-btn{
+    margin-top:12px; width:min(290px, 90%); background:rgba(61,220,151,0.14);
+    border:2px dashed #3DDC97; border-radius:14px; padding:9px 14px;
+    color:#3DDC97; font-family:var(--font-body); font-weight:800; font-size:12px;
+    letter-spacing:0.5px; cursor:pointer;
+  }
+  #free-coins-btn .btn-sub{ color:rgba(255,255,255,0.6); }
+  #free-coins-btn.gone{ opacity:0.45; pointer-events:none; }
+  #streak-saver{
+    margin-top:12px; width:min(290px, 90%); background:rgba(255,61,166,0.12);
+    border:2px solid rgba(255,61,166,0.6); border-radius:16px; padding:12px 14px;
+  }
+  #streak-saver-title{ font-family:var(--font-display); font-weight:600; font-size:14px; color:#FF9ED3; text-transform:uppercase; }
+  #streak-saver-text{ font-weight:700; font-size:11px; color:rgba(255,255,255,0.8); margin-top:3px; }
+  #skip-streak-btn{ margin-top:8px; font-weight:800; font-size:10px; letter-spacing:1px; color:rgba(255,255,255,0.5); cursor:pointer; }
   #mute-btn{
     position:absolute; bottom:14px; left:14px; z-index:6;
     background:rgba(10,14,28,0.5); backdrop-filter:blur(6px); border:none;
@@ -310,6 +332,16 @@
     <button class="btn btn-primary" id="resume-btn">▶ RESUME</button>
   </div>
 
+  <!-- Mid-run shield offer -->
+  <div id="offer-overlay" class="overlay hidden">
+    <div style="font-size:44px;">🛡</div>
+    <div class="shop-title" id="offer-title">WAVE 4 INCOMING</div>
+    <div class="shop-sub" style="text-transform:none; letter-spacing:0; font-size:12px;">Shield up for the storm ahead?</div>
+    <button class="btn btn-accent" id="offer-yes">🎬 WATCH AD · SHIELD UP</button>
+    <button class="btn btn-ghost" id="offer-no">NO THANKS, I LIKE DANGER</button>
+    <div class="hint">OFFERED ONCE PER RUN</div>
+  </div>
+
   <!-- Drag tutorial hint -->
   <div id="drag-hint" class="hidden">☝️ DRAG ANYWHERE TO STEER</div>
 
@@ -320,6 +352,12 @@
     <div id="streak-row">
       <span id="streak-flame">🔥</span>
       <span id="streak-text"><b>Day 1</b> streak</span>
+    </div>
+    <div id="streak-saver" class="hidden">
+      <div id="streak-saver-title">💔 STREAK AT RISK!</div>
+      <div id="streak-saver-text"></div>
+      <button class="btn btn-primary" id="save-streak-btn" style="width:auto; padding:10px 22px; font-size:13px; margin-top:10px;">🎬 SAVE MY STREAK</button>
+      <div id="skip-streak-btn">LET IT GO 😢</div>
     </div>
     <div id="challenge-banner" class="hidden">🎯 A friend scored <span id="challenge-floor">0</span> — beat it!</div>
     <div class="missions-panel">
@@ -348,7 +386,7 @@
       <div id="next-unlock-text"></div>
       <div id="next-unlock-bar"><div id="next-unlock-fill" style="width:0%"></div></div>
     </div>
-    <button class="btn btn-accent hidden" id="continue-btn">⚡ FREE REVIVE<span class="btn-sub">watch a short ad</span></button>
+    <button class="btn btn-accent hidden" id="continue-btn">⚡ FREE REVIVE<span class="btn-sub">watch a short ad</span><span id="continue-count">6</span></button>
     <button class="btn btn-primary hidden" id="double-btn">🪙 DOUBLE RUN COINS<span class="btn-sub">watch a short ad</span></button>
     <button class="btn btn-primary" id="share-btn">📤 SHARE SCORE</button>
     <button class="btn btn-ghost" id="shop-open-end">🛒 SHOP & UPGRADES</button>
@@ -367,6 +405,7 @@
     <div class="shop-title">COMET SHOP</div>
     <div class="shop-sub">EVERYTHING EARNABLE BY PLAYING — NO PURCHASE REQUIRED</div>
     <div id="shop-coins">🪙 0</div>
+    <button id="free-coins-btn">🎬 FREE 50 COINS<span class="btn-sub">watch a short ad · <span id="free-coins-left">3</span> left today</span></button>
     <div class="section-label">⚡ UPGRADES</div>
     <div id="upgrade-list"></div>
     <div class="section-label">☄️ COMET SKINS</div>
@@ -459,6 +498,7 @@
     missionsDone:{}, missionsDate:TODAY,
     upgrades:{ magnet:0, fever:0, slow:0, lucky:0, shieldstart:0 },
     muted:false, tutSeen:false,
+    adCoinsDate:TODAY, adCoinsUsed:0,
   };
 
   // ---------- CrazyGames SDK adapter (full features on portal, silent no-op elsewhere) ----------
@@ -497,6 +537,7 @@
     gameplayStop(){ try{ if(this.ready) this.sdk.game.gameplayStop(); }catch(e){} },
   };
 
+  let missedStreak = 0;
   (function loadSave(){
     const s = store.load();
     if(s){
@@ -509,6 +550,7 @@
         persist.streak += 1;
         persist.dailyClaimed = false;
       } else {
+        if(persist.streak >= 2) missedStreak = persist.streak;
         persist.streak = 1;
         persist.dailyClaimed = false;
       }
@@ -597,7 +639,7 @@
       wave:1, waveT:0,
       spawnT:0,
       oddT:10, oddities:[],
-      continueUsed:false,
+      continueUsed:false, offerShown:false,
       run:{ coins:0, grazes:0, wave:1, fevers:0, powerups:0, time:0 },
       doubleUsed:false,
       lastIsNewBest:false, lastScore:0, deathNear:false,
@@ -981,6 +1023,7 @@
       banner.classList.add('show');
       tone(523,0.2,'triangle',0.07); tone(659,0.25,'triangle',0.07,0.1);
       spawnCommentator(game.wave);
+      if(game.wave === 4 && !game.offerShown){ game.offerShown = true; showMidrunOffer(); }
     }
     if(commentator){
       commentator.t += dt/60;
@@ -1674,10 +1717,31 @@
   document.getElementById('daily-label').textContent = 'DAILY RUN — '+TODAY;
 
   function renderStreak(){
-    document.getElementById('streak-text').innerHTML = '<b>Day '+persist.streak+'</b> streak';
+    document.getElementById('streak-text').innerHTML = '<b>Day '+persist.streak+'</b> streak · daily bonus +'+(25*Math.min(persist.streak,7))+' 🪙';
     document.getElementById('streak-flame').textContent = persist.streak >= 7 ? '🔥🔥' : '🔥';
   }
   renderStreak();
+
+  (function offerStreakSaver(){
+    if(missedStreak < 2) return;
+    const panel = document.getElementById('streak-saver');
+    document.getElementById('streak-saver-text').textContent =
+      'You missed yesterday. Watch a short ad to keep your Day '+missedStreak+' streak, or restart at Day 1.';
+    panel.classList.remove('hidden');
+    document.getElementById('save-streak-btn').addEventListener('click', ()=>{
+      showAd('rewarded', ()=>{
+        persist.streak = missedStreak + 1;
+        missedStreak = 0;
+        store.save(persist);
+        renderStreak();
+        panel.classList.add('hidden');
+        flashRewardToast('🔥 Streak saved! Day '+persist.streak);
+      });
+    });
+    document.getElementById('skip-streak-btn').addEventListener('click', ()=>{
+      panel.classList.add('hidden');
+    });
+  })();
 
   function grantDailyReward(){
     if(persist.dailyClaimed) return;
@@ -1790,6 +1854,9 @@
     initGame();
   });
 
+  let reviveTimer = null;
+  function stopReviveTimer(){ if(reviveTimer){ clearInterval(reviveTimer); reviveTimer = null; } }
+
   function showGameOver(score, coins, isNewBest, prevBest){
     document.getElementById('stat-score').textContent = score;
     document.getElementById('stat-best').textContent = persist.best;
@@ -1829,10 +1896,20 @@
     renderNextUnlock();
 
     const contBtn = document.getElementById('continue-btn');
-    if(!game.continueUsed){ contBtn.classList.remove('hidden'); } else { contBtn.classList.add('hidden'); }
+    stopReviveTimer();
+    if(!game.continueUsed){
+      contBtn.classList.remove('hidden');
+      let reviveLeft = 6;
+      document.getElementById('continue-count').textContent = reviveLeft;
+      reviveTimer = setInterval(()=>{
+        reviveLeft--;
+        if(reviveLeft <= 0){ stopReviveTimer(); contBtn.classList.add('hidden'); return; }
+        document.getElementById('continue-count').textContent = reviveLeft;
+      }, 1000);
+    } else { contBtn.classList.add('hidden'); }
     const dblBtn = document.getElementById('double-btn');
     if(!game.doubleUsed && game.run.coins >= 8){
-      dblBtn.innerHTML = '\ud83e\ude99 DOUBLE RUN COINS (+'+game.run.coins+')<span class="btn-sub">watch a short ad</span>';
+      dblBtn.innerHTML = '\ud83e\ude99 DOUBLE RUN COINS<span class="btn-sub">watch a short ad · '+game.run.coins+' → '+(game.run.coins*2)+'</span>';
       dblBtn.classList.remove('hidden');
     } else {
       dblBtn.classList.add('hidden');
@@ -1862,11 +1939,13 @@
   }
 
   document.getElementById('restart-btn').addEventListener('click', ()=>{
+    stopReviveTimer();
     goOverlay.classList.add('hidden');
     showAd('midgame', ()=>initGame());  // natural break; SDK auto-paces to max 1 per 3 min
   });
 
   document.getElementById('double-btn').addEventListener('click', ()=>{
+    stopReviveTimer();
     goOverlay.classList.add('hidden');
     showAd('rewarded', ()=>{
       const bonus = game.run.coins;
@@ -1884,6 +1963,7 @@
   });
 
   document.getElementById('continue-btn').addEventListener('click', ()=>{
+    stopReviveTimer();
     goOverlay.classList.add('hidden');
     showAd('rewarded', ()=>{
       game.rocks = [];
@@ -1894,6 +1974,29 @@
       floatText(game.px, game.py-40, '🛡 REVIVED', '#8FE8FF', 16);
       CG.gameplayStart();
     });
+  });
+
+  function showMidrunOffer(){
+    if(paused || !game || !game.running) return;
+    paused = true;
+    CG.gameplayStop();
+    document.getElementById('offer-title').textContent = 'WAVE '+game.wave+' INCOMING';
+    document.getElementById('offer-overlay').classList.remove('hidden');
+  }
+  document.getElementById('offer-yes').addEventListener('click', ()=>{
+    document.getElementById('offer-overlay').classList.add('hidden');
+    showAd('rewarded', ()=>{
+      game.shield = true;
+      paused = false;
+      CG.gameplayStart();
+      floatText(game.px, game.py-40, '🛡 SHIELD UP', '#8FE8FF', 16);
+      shieldPop();
+    });
+  });
+  document.getElementById('offer-no').addEventListener('click', ()=>{
+    document.getElementById('offer-overlay').classList.add('hidden');
+    paused = false;
+    CG.gameplayStart();
   });
 
   function renderUpgrades(){
@@ -1942,6 +2045,7 @@
 
   function renderShop(){
     renderUpgrades();
+    renderFreeCoins();
     const grid = document.getElementById('skin-grid');
     grid.innerHTML = '';
     SKINS.forEach(s=>{
@@ -1973,6 +2077,29 @@
       grid.appendChild(card);
     });
   }
+
+  const FREE_COINS_AMOUNT = 50, FREE_COINS_PER_DAY = 3;
+  function freeCoinsLeft(){
+    if(persist.adCoinsDate !== TODAY){ persist.adCoinsDate = TODAY; persist.adCoinsUsed = 0; }
+    return Math.max(0, FREE_COINS_PER_DAY - (persist.adCoinsUsed||0));
+  }
+  function renderFreeCoins(){
+    const left = freeCoinsLeft();
+    document.getElementById('free-coins-left').textContent = left;
+    document.getElementById('free-coins-btn').classList.toggle('gone', left <= 0);
+  }
+  document.getElementById('free-coins-btn').addEventListener('click', ()=>{
+    if(freeCoinsLeft() <= 0) return;
+    showAd('rewarded', ()=>{
+      persist.adCoinsUsed = (persist.adCoinsUsed||0) + 1;
+      persist.coins += FREE_COINS_AMOUNT;
+      store.save(persist);
+      document.getElementById('hud-coins').textContent = persist.coins;
+      flashRewardToast('🎬 +'+FREE_COINS_AMOUNT+' coins!');
+      tone(880,0.15,'triangle',0.07,0); tone(1175,0.2,'triangle',0.07,0.1);
+      renderShop();
+    });
+  });
 
   document.getElementById('shop-open-start').addEventListener('click', ()=>{ renderShop(); shopOverlay.classList.remove('hidden'); });
   document.getElementById('next-unlock').addEventListener('click', ()=>{ renderShop(); shopOverlay.classList.remove('hidden'); });
