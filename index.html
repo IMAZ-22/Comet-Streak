@@ -100,11 +100,22 @@
     text-shadow:0 4px 0 rgba(0,0,0,0.25), 0 0 40px rgba(255,107,61,0.4);
   }
   .title span{ color:var(--gold); }
+  .streak-line{ position:relative; }
+  .streak-line::after{
+    content:''; position:absolute; left:-6%; right:-16%; top:6%; bottom:2%;
+    background:url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%20320%2064'%20preserveAspectRatio='none'%3E%3Cpath%20d='M4,55%20Q160,48%20297,12%20L301,19%20Q168,56%204,58%20Z'%20fill='%23E8542A'%20opacity='0.8'/%3E%3Cpath%20d='M46,53%20Q185,45%20296,14%20L298,17%20Q190,50%2046,55%20Z'%20fill='%23FFC98A'%20opacity='0.95'/%3E%3Ccircle%20cx='299'%20cy='14'%20r='11'%20fill='%23FF7A33'%20opacity='0.35'/%3E%3Ccircle%20cx='299'%20cy='14'%20r='6.5'%20fill='%23FFE8C2'/%3E%3Ccircle%20cx='300'%20cy='13'%20r='3.5'%20fill='%23FFFDF5'/%3E%3Cpath%20d='M294,8%20Q283,2%20275,5%20Q286,9%20292,13%20Z'%20fill='%23FF9A4D'%20opacity='0.9'/%3E%3Cpath%20d='M293,20%20Q282,26%20273,24%20Q285,19%20291,16%20Z'%20fill='%23F0562B'%20opacity='0.85'/%3E%3Cpath%20d='M301,6%20Q304,-1%20311,-2%20Q305,5%20303,10%20Z'%20fill='%23FFB061'%20opacity='0.9'/%3E%3Cpath%20d='M305,20%20Q311,24%20316,23%20Q310,18%20305,16%20Z'%20fill='%23E8542A'%20opacity='0.75'/%3E%3C/svg%3E") center/100% 100% no-repeat;
+    pointer-events:none;
+    filter:drop-shadow(0 0 5px rgba(255,120,50,0.7));
+  }
   .o-comet{ position:relative; display:inline-block; color:transparent; }
   .o-comet::after{
-    content:''; position:absolute; right:52%; top:42%; width:1.1em; height:0.3em;
-    background:linear-gradient(90deg, transparent, rgba(255,201,60,0.85));
-    border-radius:50%; transform:rotate(9deg); z-index:0;
+    content:''; position:absolute; right:44%; top:8%; width:1.35em; height:0.42em;
+    background:
+      linear-gradient(90deg, rgba(255,200,140,0) 0%, rgba(255,190,120,0.4) 55%, rgba(255,225,170,0.95) 100%) center/100% 32% no-repeat,
+      linear-gradient(90deg, rgba(220,60,30,0) 0%, rgba(235,80,40,0.28) 40%, rgba(255,110,50,0.65) 100%) center/100% 100% no-repeat;
+    clip-path:polygon(100% 36%, 100% 64%, 0% 100%, 0% 0%);
+    transform:rotate(26deg); transform-origin:right center; z-index:0;
+    filter:blur(0.7px);
   }
   .o-comet::before{
     content:''; position:absolute; left:50%; top:52%; transform:translate(-50%,-50%);
@@ -162,9 +173,12 @@
   .mission-reward{ font-weight:800; font-size:10.5px; color:var(--gold); }
 
   #next-unlock{
-    margin-top:10px; width:min(290px, 90%); background:rgba(255,201,60,0.12);
-    border:1.5px solid rgba(255,201,60,0.35); border-radius:14px; padding:9px 14px;
+    margin-top:10px; width:min(290px, 90%); background:rgba(255,201,60,0.16);
+    border:2px solid rgba(255,201,60,0.6); border-radius:14px; padding:10px 14px;
+    cursor:pointer; transition:background .15s, transform .08s;
+    box-shadow:0 3px 0 rgba(224,162,0,0.5);
   }
+  #next-unlock:active{ background:rgba(255,201,60,0.3); transform:translateY(2px); box-shadow:none; }
   #next-unlock-text{ font-weight:800; font-size:11px; color:var(--gold); }
   #next-unlock-bar{ margin-top:5px; height:6px; background:rgba(255,255,255,0.15); border-radius:4px; overflow:hidden; }
   #next-unlock-fill{ height:100%; background:var(--gold); border-radius:4px; transition:width .3s; }
@@ -230,12 +244,6 @@
   .upg-btn:active{ transform:translateY(2px); box-shadow:0 1px 0 var(--gold-dark); }
   .upg-btn.cant{ background:rgba(255,255,255,0.15); color:rgba(255,255,255,0.5); box-shadow:none; }
   .upg-btn.maxed{ background:var(--mint); color:#0a3323; box-shadow:none; }
-  #shop-btn{
-    position:absolute; top:12px; left:50%; transform:translateX(-50%);
-    z-index:6; background:rgba(10,14,28,0.5); backdrop-filter:blur(6px); border:none;
-    color:#fff; font-family:var(--font-display); font-weight:600; font-size:12px;
-    padding:7px 15px; border-radius:20px; cursor:pointer;
-  }
   #mute-btn{
     position:absolute; bottom:14px; left:14px; z-index:6;
     background:rgba(10,14,28,0.5); backdrop-filter:blur(6px); border:none;
@@ -284,7 +292,6 @@
     </div>
   </div>
 
-  <button id="shop-btn">☄️ SHOP</button>
   <button id="mute-btn">🔊</button>
   <button id="pause-btn">⏸</button>
 
@@ -303,7 +310,7 @@
 
   <!-- Start screen -->
   <div id="start-overlay" class="overlay">
-    <h1 class="title">C<span class="o-comet">O</span>MET<br><span>STREAK</span></h1>
+    <h1 class="title">C<span class="o-comet">O</span>MET<br><span class="streak-line">STREAK</span></h1>
     <div class="tagline">Drag to fly. Graze rocks. Don't die.</div>
     <div id="streak-row">
       <span id="streak-flame">🔥</span>
@@ -315,6 +322,7 @@
       <div id="missions-list-start"></div>
     </div>
     <button class="btn btn-primary" id="play-btn">▶ LAUNCH</button>
+    <button class="btn btn-accent" id="shop-open-start">🛒 SHOP & UPGRADES</button>
     <div class="hint" id="daily-label">DAILY RUN — —</div>
   </div>
 
@@ -386,8 +394,8 @@
     { id:'ember',   name:'EMBER',        cost:0,   core:'#FFD27A', glow:'#FF6B3D', emoji:'☄️' },
     { id:'citrus',  name:'CITRUS FLARE', cost:150, core:'#F8FFB0', glow:'#7EC13D', emoji:'🍋' },
     { id:'berry',   name:'BERRY NOVA',   cost:150, core:'#FFC4E5', glow:'#E43F8E', emoji:'🫐' },
-    { id:'ocean',   name:'DEEP CURRENT', cost:220, core:'#C4F1FF', glow:'#1E9BE0', emoji:'💧' },
-    { id:'void',    name:'VOID WALKER',  cost:300, core:'#E7D4FF', glow:'#8B3DFF', emoji:'🔮' },
+    { id:'ocean',   name:'DEEP CURRENT', cost:260, core:'#C4F1FF', glow:'#1E9BE0', emoji:'💧' },
+    { id:'void',    name:'VOID WALKER',  cost:380, core:'#E7D4FF', glow:'#8B3DFF', emoji:'🔮' },
   ];
 
   // ---------- Missions ----------
@@ -431,11 +439,11 @@
 
   // Temple Run-style permanent upgrades — bought with earned coins between runs
   const UPGRADES = [
-    { id:'magnet', name:'MAGNET TIME',   emoji:'🧲', max:4, costs:[60,120,240,480],  desc:l=>(8+l*2)+'s pull' },
-    { id:'fever',  name:'FEVER TIME',    emoji:'🔥', max:4, costs:[80,160,320,600],  desc:l=>(6.5+l*1.25).toFixed(2).replace(/\.?0+$/,'')+'s of smash' },
-    { id:'slow',   name:'SLOW-MO TIME',  emoji:'⏱', max:4, costs:[60,120,240,480],  desc:l=>(4+l)+'s of calm' },
-    { id:'lucky',  name:'LUCKY STARS',   emoji:'✨', max:4, costs:[70,140,280,560],  desc:l=>l===0?'Base drop rate':'+'+(l*35)+'% power-up drops' },
-    { id:'shieldstart', name:'LAUNCH SHIELD', emoji:'🛡', max:1, costs:[400], desc:l=>l>0?'Every run starts shielded':'Start every run shielded' },
+    { id:'magnet', name:'MAGNET TIME',   emoji:'🧲', max:4, costs:[60,130,280,560],  desc:l=>(8+l*2)+'s pull' },
+    { id:'fever',  name:'FEVER TIME',    emoji:'🔥', max:4, costs:[80,170,360,700],  desc:l=>(6.5+l*1.25).toFixed(2).replace(/\.?0+$/,'')+'s of smash' },
+    { id:'slow',   name:'SLOW-MO TIME',  emoji:'⏱', max:4, costs:[60,130,280,560],  desc:l=>(4+l)+'s of calm' },
+    { id:'lucky',  name:'LUCKY STARS',   emoji:'✨', max:4, costs:[70,150,320,640],  desc:l=>l===0?'Base drop rate':'+'+(l*35)+'% power-up drops' },
+    { id:'shieldstart', name:'LAUNCH SHIELD', emoji:'🛡', max:1, costs:[500], desc:l=>l>0?'Every run starts shielded':'Start every run shielded' },
   ];
 
   let persist = {
@@ -556,6 +564,7 @@
   let timeScale = 1, slowmoT = 0;
   let adPlaying = false;    // silence game audio while an ad runs (SDK requirement)
   let paused = false;
+  let commentator = null;   // animated alien that pops up at wave transitions
   let celebr = null;        // active celebration cutscene
   let pendingGO = null;     // game-over args deferred until celebration ends
   let challengeScore = 0;   // friend's score from shared link
@@ -656,6 +665,16 @@
     [880,740,880,740,920].forEach((f,i)=>tone(f,0.09,'sine',0.04,i*0.08));
   }
   function honkSound(){ tone(392,0.12,'square',0.05,0); tone(311,0.16,'square',0.05,0.1); }
+  function hypeSound(){ [659,830,988,1319].forEach((f,i)=>tone(f,0.11,'square',0.05,i*0.06)); }
+  function spookSound(){
+    tone(98,0.5,'sine',0.055,0); tone(103,0.5,'sine',0.05,0);   // detuned pair = uneasy beat
+    tone(196,0.35,'sine',0.04,0.28);
+  }
+  function boomSound(){
+    tone(220,0.12,'sawtooth',0.07,0);
+    tone(110,0.3,'sawtooth',0.07,0.06);
+    tone(60,0.45,'sawtooth',0.06,0.12);
+  }
   function ufoPopSound(){
     tone(1200,0.08,'square',0.06,0); tone(800,0.08,'square',0.06,0.06);
     tone(400,0.12,'sawtooth',0.07,0.12); tone(150,0.3,'sawtooth',0.06,0.18);
@@ -674,9 +693,11 @@
       ufoSound();
     } else if(roll < 0.75){
       // 🐄 space cow in a bubble — drifts up; touch it to pop for coins
+      // ~1 in 5 is VOLATILE: popping it detonates, clearing nearby rocks (never hurts you)
       game.oddities.push({
         kind:'cow', x: 40+Math.random()*(W-80), y: H+30,
         vy:-1.1, wob:Math.random()*Math.PI*2, popped:false,
+        volatile: Math.random()<0.2,
       });
     } else {
       // 👽 alien cruiser — a convertible drifting by, honking; alien waves at you
@@ -749,11 +770,32 @@
           persist.coins += 10;
           game.run.coins += 10;
           document.getElementById('hud-coins').textContent = persist.coins;
-          burst(o.x, o.y, 16, false);
-          floatText(o.x, o.y, 'MOO! +10 🪙', '#FFD75E', 15);
-          mooSound();
-          buzz(25);
-          addFever(10);
+          if(o.volatile){
+            // MOO-CLEAR: shockwave vaporizes nearby rocks; the player is immune
+            let cleared = 0;
+            for(let j=game.rocks.length-1;j>=0;j--){
+              const rk = game.rocks[j];
+              if(Math.hypot(rk.x-o.x, rk.y-o.y) < 160){
+                burst(rk.x, rk.y, 10, true);
+                game.rocks.splice(j,1);
+                cleared++;
+              }
+            }
+            game.score += cleared*15;
+            particles.push({ring:true, x:o.x, y:o.y, r:20, life:1});
+            burst(o.x, o.y, 30, true);
+            floatText(o.x, o.y-8, '💥 MOO-CLEAR!'+(cleared?' +'+(cleared*15):''), '#FFB347', 16);
+            boomSound();
+            buzz([50,30,80]);
+            shakeT = 0.3; shakeAmp = 7;
+            addFever(15);
+          } else {
+            burst(o.x, o.y, 16, false);
+            floatText(o.x, o.y, 'MOO! +10 🪙', '#FFD75E', 15);
+            mooSound();
+            buzz(25);
+            addFever(10);
+          }
           game.oddities.splice(i,1);
           continue;
         }
@@ -792,24 +834,32 @@
         ctx.font = '20px sans-serif';
         ctx.fillText('\ud83d\udc7d', o.x, o.y + Math.sin(o.wob*2)*3);
       } else if(o.kind==='cow'){
-        // bubble
-        ctx.strokeStyle = 'rgba(180,230,255,0.7)';
+        // bubble — volatile cows glow warm and pulse as a warning/invitation
+        if(o.volatile){
+          ctx.shadowColor = '#FF8C1A';
+          ctx.shadowBlur = 12 + Math.sin(o.wob*3)*6;
+          ctx.strokeStyle = 'rgba(255,160,60,0.85)';
+          ctx.fillStyle = 'rgba(255,140,26,0.14)';
+        } else {
+          ctx.strokeStyle = 'rgba(180,230,255,0.7)';
+          ctx.fillStyle = 'rgba(180,230,255,0.12)';
+        }
         ctx.lineWidth = 2;
-        ctx.fillStyle = 'rgba(180,230,255,0.12)';
         ctx.beginPath(); ctx.arc(o.x, o.y, 24, 0, Math.PI*2); ctx.fill(); ctx.stroke();
+        ctx.shadowBlur = 0;
         ctx.beginPath(); ctx.arc(o.x-8, o.y-9, 5, 0, Math.PI*2);
         ctx.fillStyle='rgba(255,255,255,0.5)'; ctx.fill();
         ctx.font = '22px sans-serif';
         ctx.fillText('🐄', o.x, o.y+8);
       } else if(o.kind==='car'){
-        ctx.font = '26px sans-serif';
-        // flip car direction via scale
         ctx.translate(o.x, o.y);
+        ctx.rotate(Math.sin(o.wob*0.55)*0.25);   // slow zero-g tumble
         if(o.vx<0) ctx.scale(-1,1);
+        ctx.font = '34px sans-serif';
         ctx.fillText('🚗', 0, 0);
-        ctx.scale(o.vx<0?-1:1, 1);
-        ctx.font = '15px sans-serif';
-        ctx.fillText('👽', o.vx<0 ? -(0)+2 : 2, -14);
+        if(o.vx<0) ctx.scale(-1,1);
+        ctx.font = '18px sans-serif';
+        ctx.fillText('👽', 3, -20);
         // little exhaust puffs
         if(Math.random()<0.15){
           particles.push({x:o.x-(o.vx>0?22:-22), y:o.y+2, vx:-o.vx*0.5, vy:-0.3,
@@ -915,14 +965,24 @@
       void banner.offsetWidth;
       banner.classList.add('show');
       tone(523,0.2,'triangle',0.07); tone(659,0.25,'triangle',0.07,0.1);
+      spawnCommentator(game.wave);
+    }
+    if(commentator){
+      commentator.t += dt/60;
+      if(commentator.t >= commentator.dur) commentator = null;
     }
 
-    // spawning
+    // spawning — jittered cadence with occasional volleys so the storm feels alive, not metronomic
     game.spawnT -= d;
     if(game.spawnT<=0){
       spawnRock();
+      if(Math.random()<0.2 && game.wave>=2){
+        const extra = 1 + Math.floor(Math.random()*2);
+        for(let k=0;k<extra;k++) spawnRock();
+      }
       const df = difficulty();
-      game.spawnT = Math.max(14, 46 - df*30);
+      const base = Math.max(14, 46 - df*30);
+      game.spawnT = base * (0.55 + Math.random()*0.95);
       if(Math.random()<0.24) spawnCoinPattern();
       if(Math.random()<powerupChance()) spawnPowerup();
     }
@@ -1041,6 +1101,7 @@
   function die(){
     game.running = false;
     game.dead = true;
+    commentator = null;
     CG.gameplayStop();
     endFever();
     crashSound();
@@ -1086,7 +1147,9 @@
       scene = 'ufoFleet'; label = 'MISSION COMPLETE!'; sub = '+'+missionCoins+' coins';
     } else if(game.wave >= 5 && !waveCelebrated){
       waveCelebrated = true;
-      scene = 'supernova'; label = 'WAVE '+game.wave+'!'; sub = 'The storm fears you';
+      const WAVE_SUBS = ['You\'re the hazard now','Certified space menace','The asteroids are filing complaints','Rocks tell stories about you','Physics would like a word'];
+      scene = 'supernova'; label = 'WAVE '+game.wave+'!';
+      sub = WAVE_SUBS[Math.floor(Math.random()*WAVE_SUBS.length)];
     }
 
     pendingGO = [score, coinsEarned, isNewBest, prevBest];
@@ -1095,6 +1158,125 @@
     } else {
       setTimeout(()=>endCelebration(), 900);
     }
+  }
+
+  // ---------- Alien commentators (wave-transition hype & dread) ----------
+  function spawnCommentator(wave){
+    const spookChance = Math.min(0.65, 0.22 + wave*0.07); // deeper waves get darker
+    const type = Math.random() < spookChance ? 'spook' : 'hype';
+    const HYPE = [
+      'YOOO! WAVE '+wave+'?!',
+      'THE COUNCIL IS IMPRESSED.',
+      'OK SHOWOFF. KEEP GOING!',
+      'CERTIFIED MENACE!!',
+      'MY COUSIN BET AGAINST YOU. GO!',
+      'THE ROCKS FILED A COMPLAINT!',
+      'WE SELL YOUR HIGHLIGHTS ON MARS.',
+    ];
+    const SPOOK = [
+      'wave '+(wave+1)+'... they come faster.',
+      'the rocks are angry now...',
+      'it only gets worse from here.',
+      'the big ones are waking up...',
+      "don't look behind you.",
+      'something big just woke up...',
+      'we stopped watching. too scary.',
+    ];
+    const pool = type==='hype' ? HYPE : SPOOK;
+    commentator = { type, t:0, dur:3.4, line: pool[Math.floor(Math.random()*pool.length)] };
+    if(type==='hype') hypeSound(); else spookSound();
+    buzz(type==='hype' ? [20,20,20] : 60);
+  }
+
+  function drawAlien(x, y, type, t){
+    const hype = type==='hype';
+    const bob = Math.sin(t*5)*3;
+    ctx.save();
+    ctx.translate(x, y+bob);
+    if(!hype) ctx.globalAlpha = 0.86 + Math.sin(t*17)*0.12;  // spook flickers like a bad signal
+    const bodyC = hype ? '#4FD46A' : '#7E3FD8';
+    const headC = hype ? '#72E88C' : '#9B63EE';
+    // arms
+    ctx.strokeStyle = bodyC; ctx.lineWidth = 5; ctx.lineCap = 'round';
+    ctx.beginPath(); ctx.moveTo(-13,20); ctx.lineTo(-23,30); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(13,20);
+    if(hype){ ctx.lineTo(23, 8 + Math.sin(t*10)*7); }       // frantic waving
+    else { ctx.lineTo(23,30); }
+    ctx.stroke();
+    // body
+    ctx.fillStyle = bodyC;
+    ctx.beginPath(); ctx.ellipse(0,26,15,17,0,0,Math.PI*2); ctx.fill();
+    // head
+    ctx.fillStyle = headC;
+    ctx.beginPath(); ctx.ellipse(0,-2,20,17,0,0,Math.PI*2); ctx.fill();
+    // antenna
+    ctx.strokeStyle = headC; ctx.lineWidth = 3;
+    ctx.beginPath(); ctx.moveTo(0,-17); ctx.quadraticCurveTo(3,-25, Math.sin(t*4)*3,-30); ctx.stroke();
+    ctx.fillStyle = hype ? '#FFE066' : '#FF5FA8';
+    ctx.beginPath(); ctx.arc(Math.sin(t*4)*3,-32,4,0,Math.PI*2); ctx.fill();
+    // eyes (blink every ~1.6s)
+    const blink = (t % 1.6) < 0.12 ? 0.15 : 1;
+    if(hype){
+      ctx.fillStyle = '#12251A';
+      ctx.beginPath(); ctx.ellipse(-7,-4,4.5,6*blink,0,0,Math.PI*2); ctx.fill();
+      ctx.beginPath(); ctx.ellipse(7,-4,4.5,6*blink,0,0,Math.PI*2); ctx.fill();
+      ctx.fillStyle = '#fff';
+      ctx.beginPath(); ctx.arc(-8.5,-6,1.6,0,Math.PI*2); ctx.fill();
+      ctx.beginPath(); ctx.arc(5.5,-6,1.6,0,Math.PI*2); ctx.fill();
+      // grin
+      ctx.strokeStyle = '#12251A'; ctx.lineWidth = 2.2;
+      ctx.beginPath(); ctx.arc(0,4,6.5,0.15*Math.PI,0.85*Math.PI); ctx.stroke();
+    } else {
+      // narrowed, slanted, red-glint eyes
+      ctx.fillStyle = '#1A0530';
+      ctx.save(); ctx.translate(-7,-4); ctx.rotate(0.35);
+      ctx.beginPath(); ctx.ellipse(0,0,5.5,2.6*blink,0,0,Math.PI*2); ctx.fill(); ctx.restore();
+      ctx.save(); ctx.translate(7,-4); ctx.rotate(-0.35);
+      ctx.beginPath(); ctx.ellipse(0,0,5.5,2.6*blink,0,0,Math.PI*2); ctx.fill(); ctx.restore();
+      ctx.fillStyle = '#FF3355';
+      ctx.beginPath(); ctx.arc(-7,-4.5,1.1,0,Math.PI*2); ctx.fill();
+      ctx.beginPath(); ctx.arc(7,-4.5,1.1,0,Math.PI*2); ctx.fill();
+      // flat unimpressed mouth with a tiny fang
+      ctx.strokeStyle = '#1A0530'; ctx.lineWidth = 2.2;
+      ctx.beginPath(); ctx.moveTo(-5,5); ctx.lineTo(5,5); ctx.stroke();
+      ctx.fillStyle = '#EDE3FF';
+      ctx.beginPath(); ctx.moveTo(2,5); ctx.lineTo(4.5,5); ctx.lineTo(3.2,8.5); ctx.closePath(); ctx.fill();
+    }
+    ctx.restore();
+  }
+
+  function drawSpeech(x, y, text, type, alpha){
+    ctx.save();
+    ctx.globalAlpha = Math.max(0, Math.min(1, alpha));
+    ctx.font = "800 12.5px 'Nunito', sans-serif";
+    const w = ctx.measureText(text).width + 22, h = 30;
+    const bx = Math.min(x, W - w - 8), by = y - h/2;
+    ctx.fillStyle = type==='hype' ? 'rgba(255,255,255,0.96)' : 'rgba(42,20,64,0.96)';
+    roundRect(ctx, bx, by, w, h, 10); ctx.fill();
+    // tail pointing at the alien
+    ctx.beginPath();
+    ctx.moveTo(bx+4, by+h-6); ctx.lineTo(bx-8, by+h+6); ctx.lineTo(bx+16, by+h-2);
+    ctx.closePath(); ctx.fill();
+    ctx.fillStyle = type==='hype' ? '#1B2A4A' : '#E9D9FF';
+    ctx.textAlign = 'left';
+    ctx.fillText(text, bx+11, y+4.5);
+    ctx.restore();
+  }
+
+  function drawCommentator(){
+    if(!commentator || !game || !game.running) return;
+    const c = commentator;
+    const inP = Math.min(1, c.t/0.4);
+    const outP = Math.max(0, (c.t-(c.dur-0.4))/0.4);
+    const vis = inP - outP;
+    const slide = (1-inP)*90 + outP*90;
+    const ax = 52, ay = H - 96 + slide;
+    if(c.type==='spook'){
+      ctx.fillStyle = 'rgba(60,10,90,'+(0.15*vis)+')';
+      ctx.fillRect(0,0,W,H);
+    }
+    drawAlien(ax, ay, c.type, c.t);
+    drawSpeech(ax+40, ay-34, c.line, c.type, vis);
   }
 
   // ---------- Celebrations (procedural cutscenes) ----------
@@ -1367,7 +1549,15 @@
 
     // particles
     particles.forEach(p=>{
-      if(p.txt){
+      if(p.ring){
+        p.r += 7; p.life -= 0.05;
+        ctx.save();
+        ctx.globalAlpha = Math.max(p.life,0);
+        ctx.strokeStyle = '#FFB347';
+        ctx.lineWidth = 5*p.life;
+        ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, Math.PI*2); ctx.stroke();
+        ctx.restore();
+      } else if(p.txt){
         p.y -= 0.8; p.life -= 0.018;
         ctx.save();
         ctx.globalAlpha = Math.max(p.life,0);
@@ -1389,6 +1579,7 @@
     });
     particles = particles.filter(p=>p.life>0);
 
+    drawCommentator();
     drawCelebration();
   }
 
@@ -1509,7 +1700,7 @@
     box.classList.remove('hidden');
     const pct = Math.min(100, Math.round(persist.coins/next.cost*100));
     document.getElementById('next-unlock-text').textContent =
-      next.emoji+' '+next.name+' — '+persist.coins+' / '+next.cost+' coins';
+      '🛒 '+next.emoji+' '+next.name+' — '+persist.coins+' / '+next.cost+' coins  ›  OPEN SHOP';
     document.getElementById('next-unlock-fill').style.width = pct+'%';
   }
 
@@ -1759,7 +1950,8 @@
     });
   }
 
-  document.getElementById('shop-btn').addEventListener('click', ()=>{ renderShop(); shopOverlay.classList.remove('hidden'); });
+  document.getElementById('shop-open-start').addEventListener('click', ()=>{ renderShop(); shopOverlay.classList.remove('hidden'); });
+  document.getElementById('next-unlock').addEventListener('click', ()=>{ renderShop(); shopOverlay.classList.remove('hidden'); });
   document.getElementById('close-shop').addEventListener('click', ()=>{ shopOverlay.classList.add('hidden'); });
 
   document.getElementById('hud-coins').textContent = persist.coins;
