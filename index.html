@@ -203,6 +203,11 @@
   #shop-overlay{ justify-content:flex-start; padding-top:44px; }
   .shop-title{ font-family:var(--font-display); font-weight:700; font-size:24px; text-shadow:0 3px 0 rgba(0,0,0,0.2); }
   .shop-sub{ font-weight:700; font-size:10px; color:rgba(255,255,255,0.7); letter-spacing:1px; margin-top:4px; }
+  #shop-coins{
+    margin-top:10px; font-family:var(--font-display); font-weight:600; font-size:20px;
+    color:var(--gold); background:rgba(255,201,60,0.12);
+    border:1.5px solid rgba(255,201,60,0.4); padding:4px 18px; border-radius:16px;
+  }
   #skin-grid{ display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-top:16px; width:100%; max-width:300px; }
   .skin-card{
     background:rgba(255,255,255,0.12); border-radius:14px; padding:12px;
@@ -346,6 +351,7 @@
     <button class="btn btn-accent hidden" id="continue-btn">⚡ FREE REVIVE<span class="btn-sub">watch a short ad</span></button>
     <button class="btn btn-primary hidden" id="double-btn">🪙 DOUBLE RUN COINS<span class="btn-sub">watch a short ad</span></button>
     <button class="btn btn-primary" id="share-btn">📤 SHARE SCORE</button>
+    <button class="btn btn-ghost" id="shop-open-end">🛒 SHOP & UPGRADES</button>
     <button class="btn btn-ghost" id="restart-btn">↻ ONE MORE RUN</button>
   </div>
 
@@ -360,6 +366,7 @@
   <div id="shop-overlay" class="overlay hidden">
     <div class="shop-title">COMET SHOP</div>
     <div class="shop-sub">EVERYTHING EARNABLE BY PLAYING — NO PURCHASE REQUIRED</div>
+    <div id="shop-coins">🪙 0</div>
     <div class="section-label">⚡ UPGRADES</div>
     <div id="upgrade-list"></div>
     <div class="section-label">☄️ COMET SKINS</div>
@@ -529,10 +536,18 @@
 
   // ---------- Audio ----------
   let audioCtx = null;
+  function unlockAudio(){
+    // Mobile browsers suspend WebAudio until a user gesture explicitly resumes it.
+    try{
+      if(!audioCtx) audioCtx = new (window.AudioContext||window.webkitAudioContext)();
+      if(audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
+    }catch(e){}
+  }
   function tone(freq, dur, type, vol, delay){
     if(persist.muted || adPlaying) return;
     try{
       if(!audioCtx) audioCtx = new (window.AudioContext||window.webkitAudioContext)();
+      if(audioCtx.state === 'suspended') audioCtx.resume();
       const t0 = audioCtx.currentTime + (delay||0);
       const o = audioCtx.createOscillator();
       const g = audioCtx.createGain();
@@ -1588,16 +1603,22 @@
   function loop(t){
     const dt = Math.min((t-lastT)/16.67, 3) || 1;
     lastT = t;
-    update(dt);
-    updateCelebration(dt);
-    if(shakeT>0){
-      shakeT -= dt/60;
-      const s = document.getElementById('stage');
-      s.style.transform = 'translate('+((Math.random()*2-1)*shakeAmp*shakeT*3)+'px, '+((Math.random()*2-1)*shakeAmp*shakeT*3)+'px)';
-    } else {
-      document.getElementById('stage').style.transform = '';
+    try{
+      update(dt);
+      updateCelebration(dt);
+      if(shakeT>0){
+        shakeT -= dt/60;
+        const s = document.getElementById('stage');
+        s.style.transform = 'translate('+((Math.random()*2-1)*shakeAmp*shakeT*3)+'px, '+((Math.random()*2-1)*shakeAmp*shakeT*3)+'px)';
+      } else {
+        document.getElementById('stage').style.transform = '';
+      }
+      draw();
+    }catch(err){
+      // Never let a single bad frame kill the game — log it, drop the frame, keep running.
+      try{ console.error('frame error (recovered):', err); }catch(e){}
+      shakeT = 0;
     }
-    draw();
     requestAnimationFrame(loop);
   }
   requestAnimationFrame(loop);
@@ -1615,6 +1636,7 @@
     }
   }
   canvas.addEventListener('pointerdown', e=>{
+    unlockAudio();
     if(celebr){ endCelebration(); return; }
     setTarget(e);
   });
@@ -1762,6 +1784,7 @@
   document.getElementById('share-btn').addEventListener('click', shareScore);
 
   document.getElementById('play-btn').addEventListener('click', ()=>{
+    unlockAudio();
     startOverlay.classList.add('hidden');
     grantDailyReward();
     initGame();
@@ -1874,6 +1897,7 @@
   });
 
   function renderUpgrades(){
+    document.getElementById('shop-coins').textContent = '🪙 '+persist.coins;
     const list = document.getElementById('upgrade-list');
     list.innerHTML = '';
     UPGRADES.forEach(u=>{
@@ -1952,6 +1976,7 @@
 
   document.getElementById('shop-open-start').addEventListener('click', ()=>{ renderShop(); shopOverlay.classList.remove('hidden'); });
   document.getElementById('next-unlock').addEventListener('click', ()=>{ renderShop(); shopOverlay.classList.remove('hidden'); });
+  document.getElementById('shop-open-end').addEventListener('click', ()=>{ renderShop(); shopOverlay.classList.remove('hidden'); });
   document.getElementById('close-shop').addEventListener('click', ()=>{ shopOverlay.classList.add('hidden'); });
 
   document.getElementById('hud-coins').textContent = persist.coins;
