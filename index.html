@@ -113,6 +113,10 @@
     background:rgba(255,255,255,0.1); border:2px solid rgba(255,255,255,0.35);
     box-shadow:none; padding:12px 28px;
   }
+  .btn-sub{
+    display:block; font-family:var(--font-body); font-weight:700; font-size:9.5px;
+    letter-spacing:0.5px; text-transform:none; opacity:0.75; margin-top:2px;
+  }
   .hint{ font-weight:700; font-size:10px; color:rgba(255,255,255,0.5); margin-top:16px; letter-spacing:1px; }
 
   #streak-row{
@@ -284,7 +288,8 @@
       <div id="next-unlock-text"></div>
       <div id="next-unlock-bar"><div id="next-unlock-fill" style="width:0%"></div></div>
     </div>
-    <button class="btn btn-accent hidden" id="continue-btn">▶ WATCH AD · REVIVE</button>
+    <button class="btn btn-accent hidden" id="continue-btn">⚡ FREE REVIVE<span class="btn-sub">watch a short ad</span></button>
+    <button class="btn btn-primary hidden" id="double-btn">🪙 DOUBLE RUN COINS<span class="btn-sub">watch a short ad</span></button>
     <button class="btn btn-primary" id="share-btn">📤 SHARE SCORE</button>
     <button class="btn btn-ghost" id="restart-btn">↻ ONE MORE RUN</button>
   </div>
@@ -464,6 +469,10 @@
   let particles = [];
   let shakeT = 0, shakeAmp = 0;
   let timeScale = 1, slowmoT = 0;
+  let celebr = null;        // active celebration cutscene
+  let pendingGO = null;     // game-over args deferred until celebration ends
+  let challengeScore = 0;   // friend's score from shared link
+  let waveCelebrated = false;
 
   function freshState(){
     return {
@@ -479,6 +488,7 @@
       oddT:10, oddities:[],
       continueUsed:false,
       run:{ coins:0, grazes:0, wave:1, fevers:0, powerups:0, time:0 },
+      doubleUsed:false,
       lastIsNewBest:false, lastScore:0, deathNear:false,
     };
   }
@@ -920,7 +930,154 @@
     }
 
     store.save(persist);
-    setTimeout(()=>showGameOver(score, coinsEarned, isNewBest, prevBest), 900);
+
+    // pick a celebration cutscene by priority
+    let scene = null, label = '', sub = '';
+    if(isNewBest){
+      scene = 'goldenComet'; label = 'NEW BEST!'; sub = score+' points';
+    } else if(challengeScore > 0 && score > challengeScore){
+      scene = 'cowParade'; label = 'FRIEND DEFEATED!'; sub = 'You beat their '+challengeScore;
+      challengeScore = 0;
+    } else if(missionCoins > 0){
+      scene = 'ufoFleet'; label = 'MISSION COMPLETE!'; sub = '+'+missionCoins+' coins';
+    } else if(game.wave >= 5 && !waveCelebrated){
+      waveCelebrated = true;
+      scene = 'supernova'; label = 'WAVE '+game.wave+'!'; sub = 'The storm fears you';
+    }
+
+    pendingGO = [score, coinsEarned, isNewBest, prevBest];
+    if(scene){
+      setTimeout(()=>playCelebration(scene, label, sub), 900);
+    } else {
+      setTimeout(()=>endCelebration(), 900);
+    }
+  }
+
+  // ---------- Celebrations (procedural cutscenes) ----------
+  function playCelebration(scene, label, sub){
+    celebr = { scene, label, sub:sub||'', t:0, dur:3.8, actors:[], rings:[] };
+    if(scene==='goldenComet'){
+      celebr.actors.push({x:-60, y:H*0.42, vx:4.2});
+      [523,659,784,1047,1319,1568].forEach((f,i)=>tone(f,0.18,'triangle',0.07,i*0.09));
+    } else if(scene==='ufoFleet'){
+      for(let i=0;i<5;i++){
+        celebr.actors.push({x:-70-i*46, y:H*0.34 + Math.abs(i-2)*34, vx:3.4, wob:i});
+      }
+      ufoSound(); setTimeout(ufoSound, 500);
+    } else if(scene==='supernova'){
+      [392,523,659,784].forEach((f,i)=>tone(f,0.22,'sawtooth',0.05,i*0.12));
+    } else if(scene==='cowParade'){
+      for(let i=0;i<6;i++){
+        celebr.actors.push({x:30+i*(W-60)/5, y:H+40+i*26, vy:-2.2, wob:i*1.3});
+      }
+      mooSound(); setTimeout(mooSound, 600); setTimeout(mooSound, 1300);
+    }
+  }
+  function endCelebration(){
+    celebr = null;
+    if(pendingGO){ const a = pendingGO; pendingGO = null; showGameOver(a[0],a[1],a[2],a[3]); }
+  }
+  function updateCelebration(dt){
+    if(!celebr) return;
+    celebr.t += dt/60;
+    const c = celebr;
+    if(c.scene==='goldenComet'){
+      c.actors.forEach(a=>{
+        a.x += a.vx*dt;
+        a.y = H*0.42 + Math.sin(a.x*0.02)*40;
+        for(let k=0;k<3;k++){
+          particles.push({x:a.x-10, y:a.y+(Math.random()-0.5)*14,
+            vx:-2-Math.random()*2, vy:(Math.random()-0.5)*1.5,
+            size:2+Math.random()*4, life:1,
+            color:'hsl('+(Math.random()*360)+', 90%, 62%)'});
+        }
+        if(a.x > W+60) a.x = -60;
+      });
+      if(Math.random()<0.12) burst(Math.random()*W, Math.random()*H*0.7, 16, true);
+    } else if(c.scene==='ufoFleet'){
+      c.actors.forEach(a=>{
+        a.x += a.vx*dt; a.wob += 0.1*dt;
+        if(Math.random()<0.35){
+          particles.push({x:a.x, y:a.y+18, vx:(Math.random()-0.5), vy:1.5+Math.random(),
+            size:1.5+Math.random()*2, life:0.8, color:'hsl(130, 90%, 70%)'});
+        }
+        if(a.x > W+70) a.x = -70;
+      });
+    } else if(c.scene==='supernova'){
+      if(Math.random()<0.3) c.rings.push({r:10, a:1});
+      c.rings.forEach(r=>{ r.r += 6*dt; r.a -= 0.02*dt; });
+      c.rings = c.rings.filter(r=>r.a>0);
+      if(Math.random()<0.2) burst(W/2, H*0.42, 12, true);
+    } else if(c.scene==='cowParade'){
+      c.actors.forEach(a=>{
+        a.y += a.vy*dt; a.wob += 0.07*dt;
+        a.x += Math.sin(a.wob)*0.8;
+      });
+    }
+    if(c.t >= c.dur) endCelebration();
+  }
+  function drawCelebration(){
+    if(!celebr) return;
+    const c = celebr;
+    const p = Math.min(1, c.t/0.4);
+    ctx.save();
+    ctx.fillStyle = 'rgba(8,10,22,'+(0.72*p)+')';
+    ctx.fillRect(0,0,W,H);
+
+    if(c.scene==='goldenComet'){
+      c.actors.forEach(a=>{
+        ctx.save();
+        ctx.shadowColor = '#FFC93C'; ctx.shadowBlur = 34;
+        const g = ctx.createRadialGradient(a.x,a.y,3,a.x,a.y,22);
+        g.addColorStop(0,'#fff'); g.addColorStop(0.5,'#FFE788'); g.addColorStop(1,'#FF8C1A');
+        ctx.fillStyle = g;
+        ctx.beginPath(); ctx.arc(a.x,a.y,22,0,Math.PI*2); ctx.fill();
+        ctx.restore();
+      });
+    } else if(c.scene==='ufoFleet'){
+      ctx.textAlign='center';
+      c.actors.forEach(a=>{
+        ctx.font = '32px sans-serif';
+        ctx.fillText('\ud83d\udef8', a.x, a.y + Math.sin(a.wob)*5);
+      });
+    } else if(c.scene==='supernova'){
+      c.rings.forEach(r=>{
+        ctx.strokeStyle = 'hsla('+(r.r*2%360)+', 90%, 65%, '+r.a+')';
+        ctx.lineWidth = 4;
+        ctx.beginPath(); ctx.arc(W/2, H*0.42, r.r, 0, Math.PI*2); ctx.stroke();
+      });
+    } else if(c.scene==='cowParade'){
+      ctx.textAlign='center';
+      c.actors.forEach(a=>{
+        ctx.strokeStyle = 'rgba(180,230,255,0.7)'; ctx.lineWidth=2;
+        ctx.fillStyle = 'rgba(180,230,255,0.12)';
+        ctx.beginPath(); ctx.arc(a.x,a.y,26,0,Math.PI*2); ctx.fill(); ctx.stroke();
+        ctx.font = '24px sans-serif';
+        ctx.fillText('\ud83d\udc04', a.x, a.y+9);
+      });
+    }
+
+    const scale = 0.6 + 0.4*Math.min(1, c.t/0.35) + Math.sin(Math.min(c.t,1)*8)*0.03*Math.max(0,1-c.t);
+    ctx.translate(W/2, H*0.2);
+    ctx.scale(scale, scale);
+    ctx.font = "700 34px 'Fredoka', sans-serif";
+    ctx.textAlign = 'center';
+    ctx.strokeStyle = 'rgba(0,0,0,0.4)'; ctx.lineWidth = 6;
+    ctx.strokeText(c.label, 0, 0);
+    ctx.fillStyle = '#FFC93C';
+    ctx.fillText(c.label, 0, 0);
+    if(c.sub){
+      ctx.font = "700 15px 'Nunito', sans-serif";
+      ctx.fillStyle = 'rgba(255,255,255,0.85)';
+      ctx.fillText(c.sub, 0, 30);
+    }
+    ctx.restore();
+    ctx.save();
+    ctx.font = "700 10px 'Nunito', sans-serif";
+    ctx.fillStyle = 'rgba(255,255,255,0.4)';
+    ctx.textAlign = 'center';
+    ctx.fillText('tap to skip', W/2, H-18);
+    ctx.restore();
   }
 
   // ---------- Render ----------
@@ -1072,6 +1229,8 @@
       }
     });
     particles = particles.filter(p=>p.life>0);
+
+    drawCelebration();
   }
 
   // ---------- Loop ----------
@@ -1080,6 +1239,7 @@
     const dt = Math.min((t-lastT)/16.67, 3) || 1;
     lastT = t;
     update(dt);
+    updateCelebration(dt);
     if(shakeT>0){
       shakeT -= dt/60;
       const s = document.getElementById('stage');
@@ -1103,7 +1263,10 @@
       game.ty = cy - 46; // offset above finger so thumb doesn't cover comet
     }
   }
-  canvas.addEventListener('pointerdown', e=>{ setTarget(e); });
+  canvas.addEventListener('pointerdown', e=>{
+    if(celebr){ endCelebration(); return; }
+    setTarget(e);
+  });
   canvas.addEventListener('pointermove', e=>{ if(e.buttons>0 || e.pointerType==='mouse') setTarget(e); });
 
   // ---------- Game lifecycle ----------
@@ -1185,6 +1348,7 @@
       const params = new URLSearchParams(window.location.search);
       const cf = params.get('challenge');
       if(cf && !isNaN(parseInt(cf,10))){
+        challengeScore = parseInt(cf,10);
         document.getElementById('challenge-floor').textContent = cf;
         document.getElementById('challenge-banner').classList.remove('hidden');
       }
@@ -1274,12 +1438,37 @@
 
     const contBtn = document.getElementById('continue-btn');
     if(!game.continueUsed){ contBtn.classList.remove('hidden'); } else { contBtn.classList.add('hidden'); }
+    const dblBtn = document.getElementById('double-btn');
+    if(!game.doubleUsed && game.run.coins >= 8){
+      dblBtn.innerHTML = '\ud83e\ude99 DOUBLE RUN COINS (+'+game.run.coins+')<span class="btn-sub">watch a short ad</span>';
+      dblBtn.classList.remove('hidden');
+    } else {
+      dblBtn.classList.add('hidden');
+    }
     goOverlay.classList.remove('hidden');
   }
 
   document.getElementById('restart-btn').addEventListener('click', ()=>{
     goOverlay.classList.add('hidden');
     initGame();
+  });
+
+  document.getElementById('double-btn').addEventListener('click', ()=>{
+    goOverlay.classList.add('hidden');
+    adOverlay.classList.remove('hidden');
+    setTimeout(()=>{
+      adOverlay.classList.add('hidden');
+      const bonus = game.run.coins;
+      persist.coins += bonus;
+      game.doubleUsed = true;
+      store.save(persist);
+      document.getElementById('hud-coins').textContent = persist.coins;
+      flashRewardToast('\ud83e\ude99 Coins doubled! +'+bonus);
+      tone(880,0.15,'triangle',0.07,0); tone(1175,0.2,'triangle',0.07,0.1);
+      renderNextUnlock();
+      goOverlay.classList.remove('hidden');
+      document.getElementById('double-btn').classList.add('hidden');
+    }, 2200);
   });
 
   document.getElementById('continue-btn').addEventListener('click', ()=>{
