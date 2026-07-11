@@ -3,7 +3,15 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, user-scalable=no">
-<title>Comet Streak</title>
+<title>Comet Streak — drag, dodge, graze, moo</title>
+<meta name="description" content="Steer a comet through an asteroid storm. Graze rocks for points, pop space cows, hunt fleeing UFOs. Free browser game.">
+<meta property="og:title" content="Comet Streak">
+<meta property="og:description" content="I dare you to beat my score. Drag to fly, graze rocks, pop space cows. 30 seconds to learn, impossible to put down.">
+<meta property="og:type" content="website">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Comet Streak">
+<meta name="twitter:description" content="Drag to fly. Graze rocks. Pop space cows. Beat my score.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>\u2604\uFE0F</text></svg>">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Nunito:wght@600;700;800&display=swap" rel="stylesheet">
 <style>
@@ -91,6 +99,20 @@
     text-shadow:0 4px 0 rgba(0,0,0,0.25), 0 0 40px rgba(255,107,61,0.4);
   }
   .title span{ color:var(--gold); }
+  .o-comet{ position:relative; display:inline-block; color:transparent; }
+  .o-comet::after{
+    content:''; position:absolute; right:52%; top:42%; width:1.1em; height:0.3em;
+    background:linear-gradient(90deg, transparent, rgba(255,201,60,0.85));
+    border-radius:50%; transform:rotate(9deg); z-index:0;
+  }
+  .o-comet::before{
+    content:''; position:absolute; left:50%; top:52%; transform:translate(-50%,-50%);
+    width:0.62em; height:0.62em; border-radius:50%; z-index:1;
+    background:radial-gradient(circle at 35% 35%, #fff, #FFE788 45%, #FF8C1A);
+    box-shadow:0 0 18px rgba(255,201,60,0.9);
+    animation:cometPulse 2s ease-in-out infinite;
+  }
+  @keyframes cometPulse{ 0%,100%{ box-shadow:0 0 14px rgba(255,201,60,0.7);} 50%{ box-shadow:0 0 26px rgba(255,201,60,1);} }
   .tagline{ font-weight:700; font-size:13px; color:rgba(255,255,255,0.85); margin-top:8px; }
 
   .btn{
@@ -217,6 +239,11 @@
     color:#fff; font-family:var(--font-display); font-weight:600; font-size:12px;
     padding:7px 15px; border-radius:20px; cursor:pointer;
   }
+  #mute-btn{
+    position:absolute; bottom:14px; left:14px; z-index:6;
+    background:rgba(10,14,28,0.5); backdrop-filter:blur(6px); border:none;
+    font-size:14px; padding:7px 10px; border-radius:16px; cursor:pointer;
+  }
 
   #challenge-banner{
     margin-top:12px; background:rgba(255,201,60,0.18); border:1.5px solid rgba(255,201,60,0.5);
@@ -249,6 +276,7 @@
   </div>
 
   <button id="shop-btn">☄️ SHOP</button>
+  <button id="mute-btn">🔊</button>
 
   <div id="fever-label">FEVER</div>
   <div id="fever-meter"><div id="fever-fill"></div></div>
@@ -256,7 +284,7 @@
 
   <!-- Start screen -->
   <div id="start-overlay" class="overlay">
-    <h1 class="title">COMET<br><span>STREAK</span></h1>
+    <h1 class="title">C<span class="o-comet">O</span>MET<br><span>STREAK</span></h1>
     <div class="tagline">Drag to fly. Graze rocks. Don't die.</div>
     <div id="streak-row">
       <span id="streak-flame">🔥</span>
@@ -400,6 +428,7 @@
     streak:1, lastPlay:TODAY, dailyClaimed:false,
     missionsDone:{}, missionsDate:TODAY,
     upgrades:{ magnet:0, fever:0, slow:0, lucky:0, shieldstart:0 },
+    muted:false,
   };
 
   (function loadSave(){
@@ -442,6 +471,7 @@
   // ---------- Audio ----------
   let audioCtx = null;
   function tone(freq, dur, type, vol, delay){
+    if(persist.muted) return;
     try{
       if(!audioCtx) audioCtx = new (window.AudioContext||window.webkitAudioContext)();
       const t0 = audioCtx.currentTime + (delay||0);
@@ -455,6 +485,10 @@
       g.gain.exponentialRampToValueAtTime(0.0001, t0+dur);
       o.start(t0); o.stop(t0+dur+0.02);
     }catch(e){}
+  }
+  function buzz(ms){
+    if(persist.muted) return;
+    try{ if(navigator.vibrate) navigator.vibrate(ms); }catch(e){}
   }
   const coinPitch = [880, 988, 1109, 1175, 1319];
   function coinSound(streak){ tone(coinPitch[Math.min(streak, coinPitch.length-1)], 0.09, 'square', 0.045); }
@@ -634,6 +668,7 @@
           burst(o.x, o.y, 12, false);
           floatText(o.x, o.y-14, 'UFO DOWN! +50', '#B8FFB0', 16);
           ufoPopSound();
+          buzz(45);
           addFever(20);
           shakeT = 0.28; shakeAmp = 7;
           // the pilot ejects, unimpressed
@@ -664,6 +699,7 @@
           burst(o.x, o.y, 16, false);
           floatText(o.x, o.y, 'MOO! +10 🪙', '#FFD75E', 15);
           mooSound();
+          buzz(25);
           addFever(10);
           game.oddities.splice(i,1);
           continue;
@@ -749,6 +785,7 @@
     game.run.fevers++;
     document.getElementById('stage').classList.add('fever');
     feverFanfare();
+    buzz([30,30,30,30,60]);
     burst(game.px, game.py, 36, true);
     floatText(W/2, H*0.3, '🔥 FEVER! SMASH ROCKS!', '#FF3DA6', 18);
     shakeT = 0.3; shakeAmp = 5;
@@ -885,6 +922,7 @@
         game.score += 8*mult;
         addFever(14);
         grazeSound();
+        buzz(12);
         floatText(game.px + dx*0.5, game.py + dy*0.5, grazeText(), '#8FE8FF', 12);
         timeScale = 0.45; slowmoT = 0.09; // micro slow-mo
       }
@@ -952,6 +990,7 @@
     game.dead = true;
     endFever();
     crashSound();
+    buzz([60,40,90]);
     burst(game.px, game.py, 40, false);
     shakeT = 0.45; shakeAmp = 10;
     timeScale = 0.25; slowmoT = 0.8;
@@ -1340,6 +1379,9 @@
     game = freshState();
     game.running = true;
     endFever();
+    timeScale = 1; slowmoT = 0;   // clear death slow-mo so new runs start at full speed
+    shakeT = 0; shakeAmp = 0;
+    celebr = null; pendingGO = null;
     if(persist.upgrades.shieldstart > 0){
       game.shield = true;
       floatText(game.px, game.py-40, '🛡 LAUNCH SHIELD', '#8FE8FF', 13);
@@ -1493,8 +1535,16 @@
       shareBtn.textContent = '📤 SHARE SCORE';
       shareBtn.classList.remove('btn-primary'); shareBtn.classList.add('btn-ghost');
     } else {
+      const QUIPS = [
+        'Wave '+game.wave+' got you. One more run?',
+        'That rock had your name on it.',
+        'The cows watched it happen.',
+        'Somewhere, an alien is laughing.',
+        'Gravity: 1. You: '+score+'.',
+        'The storm remembers. Go remind it.',
+      ];
       headline.textContent = 'COMET DOWN';
-      sub.textContent = 'Wave '+game.wave+' got you. One more run?';
+      sub.textContent = QUIPS[Math.floor(Math.random()*QUIPS.length)];
       shareBtn.textContent = '📤 SHARE SCORE';
       shareBtn.classList.remove('btn-primary'); shareBtn.classList.add('btn-ghost');
     }
@@ -1530,6 +1580,7 @@
       store.save(persist);
       document.getElementById('hud-coins').textContent = persist.coins;
       flashRewardToast('\ud83e\ude99 Coins doubled! +'+bonus);
+      document.getElementById('stat-coins').textContent = '+'+(bonus*2);
       tone(880,0.15,'triangle',0.07,0); tone(1175,0.2,'triangle',0.07,0.1);
       renderNextUnlock();
       goOverlay.classList.remove('hidden');
@@ -1633,6 +1684,15 @@
   document.getElementById('close-shop').addEventListener('click', ()=>{ shopOverlay.classList.add('hidden'); });
 
   document.getElementById('hud-coins').textContent = persist.coins;
+
+  const muteBtn = document.getElementById('mute-btn');
+  function renderMute(){ muteBtn.textContent = persist.muted ? '\ud83d\udd07' : '\ud83d\udd0a'; }
+  renderMute();
+  muteBtn.addEventListener('click', ()=>{
+    persist.muted = !persist.muted;
+    store.save(persist);
+    renderMute();
+  });
 
 })();
 </script>
